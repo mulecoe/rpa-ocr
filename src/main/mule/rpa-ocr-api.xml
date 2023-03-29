@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+    <http:listener-config name="rpa-ocr-api-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="rpa-ocr-api-config" api="rpa-ocr-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="rpa-ocr-api-main">
+        <http:listener config-ref="rpa-ocr-api-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="rpa-ocr-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="rpa-ocr-api-console">
+        <http:listener config-ref="rpa-ocr-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="rpa-ocr-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\driver-license:application\json:rpa-ocr-api-config">
+        <logger level="INFO" message="#[payload]" />
+<!-- [STUDIO:"dw version1"]		<ee:transform doc:name="dw version1" doc:id="df3013b8-ca78-4c52-b13c-568baf92df03" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/json skipNullOn="everywhere"
+var addr = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringBefore "DOB") ) substringAfter  "FN"
+var a=(addr replace /[^0-9]/ with(""))[0] as String
+var dlNo = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "LICENSE") [0 to 7]
+
+var dateOB = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DOB") [0 to 10]) replace " " with ""
+var expDate = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EXP") [0 to 9]
+
+var weight = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "WGT") [1 to 6]
+var height = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HGT") [1 to 5]
+var gender = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "SEX")[1 to 1]
+&#45;&#45;-
+{
+    "DL" : dlNo replace "DL " with "",
+    "ISS" : flatten(payload.Pages..Lines)..Text[-1],
+    "EXP" : expDate,
+    "WGT" : weight,
+    "HGT" : height,
+    "SEX" : gender,
+    "DOB" : (dateOB as Date{format: "MM/dd/yyyy"} as String{format:"yyyy-MM-dd"}) as Date,
+    "CLASS" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "CLASS")[1 to 1],
+    "END" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "END") [1 to 4],
+    "FN" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "FN")[0 to (addr indexOf (a))]) replace/[0-9]/ with "",
+    "LN" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "LN ")) substringBefore  "FN",
+    "ADDRESS" : addr[(addr indexOf(a)) to -1],
+    "HAIR" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HAIR ") substringBefore  "EYES"),
+    "EYES" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EYES ") [0 to 2]),
+    "DD" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DD ")[0 to -11]),
+    
+    "RSTR" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "RSTR") [1 to 4] 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+<!-- [STUDIO:"dw version2"]		<ee:transform doc:name="dw version2" doc:id="f61ad35f-fe90-4256-84bf-1db0fba4bb74">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/json skipNullOn="everywhere"
+var addr = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringBefore "DOB") ) substringAfter  "FN"
+var a=(addr replace /[^0-9]/ with(""))[0] as String
+var dlNo = (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "LICENSEDL")) substringBefore  "CLASS") replace " " with ""
+
+var dateOB = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DOB") [0 to 10]) replace " " with ""
+var expDate = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EXP")) substringBefore  "END"
+
+var weight = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "WGT") [1 to 6]
+var height = (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HGT")) substringBefore  "WGT") replace /[^a-z0-9A-Z'-]/ with ""
+var gender = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "SEX")[1 to 1]
+&#45;&#45;-
+{
+    "DL" : dlNo replace "DL " with "",
+    "ISS" : flatten(payload.Pages..Lines)..Text[-1],
+    "EXP" : expDate,
+    "WGT" : weight,
+    "HGT" : height,
+    "SEX" : gender,
+    // "" : dateOB,
+    "DOB" : (dateOB as Date{format: "dd/MM/yyyy"} as String{format:"yyyy-MM-dd"}) as Date,
+    "CLASS" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "CLASS")[1 to 1],
+    "END" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "END") [1 to 4],
+    "FN" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "FN ")[0 to (addr indexOf (a))]) replace/[0-9]/ with "",
+    "LN" : (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "LN")) substringBefore  "FN") replace " " with "" ,
+    "ADDRESS" : addr[(addr indexOf(a)) to -1],
+    "HAIR" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HAIR ") substringBefore  "EYES"),
+    "EYES" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EYES ") [0 to 2]),
+    "DD" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DD ")[0 to -11]),
+    
+    "RSTR" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "RSTR") [1 to 4] 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+		<ee:transform doc:name="v3" doc:id="6c3525c7-99a9-4989-b247-62d33f201e4b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/json skipNullOn="everywhere"
+var addr = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringBefore "DOB") ) substringAfter  "FN"
+var a=(addr replace /[^0-9]/ with(""))[0] as String
+var dll = (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") replace  "FEDERALLIMITSAPPLY" with "" substringAfter  "DL"))) 
+
+var dateOB = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DOB") [0 to 10]) replace /[A-Z ]/ with ""
+var expDate = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EXP")) substringBefore  "END"
+
+var weight = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "WGT") [1 to 6]
+var height = (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HGT")) substringBefore  "WGT") replace /[^a-z0-9A-Z'-]/ with ""
+var gender = (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "SEX")[1 to 1]
+var firstName = ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "FN")) 
+---
+{
+    "DL" : if(dll[0] ~= " ") dll[1 to 8]  else dll[0 to 7],
+    "ISS" : flatten(payload.Pages..Lines)..Text[-1],
+    "EXP" : expDate,
+    "WGT" : weight,
+    "HGT" : height,
+    "SEX" : gender,
+    // "" : dateOB,
+    "DOB" : (dateOB as Date{format: "dd/MM/yyyy"} as String{format:"yyyy-MM-dd"}) as Date,
+    "CLASS" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "CLASS")[1 to 1],
+    "END" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "END") [1 to 4],
+    "FN" : if(firstName[0] ~= " ") ((firstName[1 to (addr indexOf (a))] replace/[0-9]/ with "")) else (firstName[0 to (addr indexOf (a))] replace/[0-9]/ with ""),
+    "LN" : (((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "LN")) substringBefore  "FN") replace " " with "" ,
+    "ADDRESS" : addr[(addr indexOf(a)) to -1],
+    "ZIPCODE" : (addr[(addr indexOf(a)) to -1])[-7 to -1] replace /[A-Za-z ]/ with "",
+    "HAIR" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "HAIR ") substringBefore  "EYES"),
+    "EYES" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "EYES ") [0 to 2]),
+    "DD" : ((flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "DD ")[0 to -11]),
+    
+    "RSTR" : (flatten(payload.Pages..Lines) map($.Text) joinBy ("") substringAfter  "RSTR") [1 to 4] 
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="94758f7c-6e81-41a7-afd8-881cb02f4810" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="7950d62f-0acb-4a74-a4d8-084cc5099a23" message="#[payload]"/>
+<!-- [STUDIO:"Transform Message"]		<ee:transform doc:name="Transform Message" doc:id="4fff8939-e322-452d-9afb-417c39a7db6d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var DateOB = payload mapObject({
+    (if($$ ~= "DOB"){($$):$}  else null)
+})
+var firstName = payload mapObject({
+    (if($$ ~= "FN"){($$):$}  else null)
+})
+var lastName = payload mapObject({
+    (if($$ ~= "LN"){($$):$}  else null)
+})
+&#45;&#45;-
+[
+    DateOB , firstName , lastName
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+<!-- [STUDIO:"Logger"]		<logger level="INFO" doc:name="Logger" doc:id="aca28c40-7f5a-47a2-862b-761c7e116ecc" message="#[payload]"/> [STUDIO] -->
+    </flow>
+</mule>
