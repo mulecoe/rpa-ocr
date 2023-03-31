@@ -29,6 +29,28 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
+				<configuration>
+				<cloudHubDeployment>
+					<uri>https://anypoint.mulesoft.com</uri>
+					<muleVersion>4.4.0</muleVersion>
+					<connectedAppClientId>${connectedapp.clientid}</connectedAppClientId>
+					<connectedAppClientSecret>${connectedapp.clientsecret}</connectedAppClientSecret>
+					<connectedAppGrantType>${connectedapp.granttype}</connectedAppGrantType>
+					<applicationName>multi-factor-authentication-sys-api</applicationName>
+					<environment>${app.env}</environment>
+					<region>${app.region}</region>
+					<workers>${app.workers}</workers>
+					<workerType>MICRO</workerType>
+					<objectStoreV2>true</objectStoreV2>
+				</cloudHubDeployment>
+					<sharedLibraries>
+						<sharedLibrary>
+							<groupId>org.mongodb</groupId>
+							<artifactId>mongodb-driver-legacy</artifactId>
+						</sharedLibrary>
+					</sharedLibraries>
+					<classifier>mule-application</classifier>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
