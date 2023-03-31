@@ -36,7 +36,7 @@
 					<connectedAppClientId>${connectedapp.clientid}</connectedAppClientId>
 					<connectedAppClientSecret>${connectedapp.clientsecret}</connectedAppClientSecret>
 					<connectedAppGrantType>${connectedapp.granttype}</connectedAppGrantType>
-					<applicationName>multi-factor-authentication-sys-api</applicationName>
+					<applicationName>rpa-ocr-api</applicationName>
 					<environment>${app.env}</environment>
 					<region>${app.region}</region>
 					<workers>${app.workers}</workers>
