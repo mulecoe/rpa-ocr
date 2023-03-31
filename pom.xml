@@ -29,7 +29,7 @@
 				<artifactId>mule-maven-plugin</artifactId>
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
-			</plugin>
+			
 				<configuration>
 				<cloudHubDeployment>
 					<uri>https://anypoint.mulesoft.com</uri>
@@ -52,6 +52,7 @@
 					</sharedLibraries>
 					<classifier>mule-application</classifier>
 				</configuration>
+</plugin>
 		</plugins>
 	</build>
 
